@@ -68,8 +68,8 @@ temp/
 .tmp/
 .temp/ 
 
-.review.md
+review.md
 
 .cursorindexingignore
 
-.specstory/
+/specstory/
