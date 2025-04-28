@@ -1,20 +1,39 @@
-from fastapi import FastAPI, APIRouter, Request
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Dict, Any
+import logging
+import sys
+from dotenv import load_dotenv
 from contextlib import asynccontextmanager
-import os
-
-# fin_router.py에서 라우터 가져오기
+import logging
 from app.api.fin_router import router as fin_api_router
 
-# FastAPI 앱 생성
+# 로깅 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("finance_api")
+
+# .env 파일 로드
+load_dotenv()
+    
+# ✅ 애플리케이션 시작 시 실행
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("🚀 Finance API 서비스 시작")
+    yield
+    logger.info("🛑 Finance API 서비스 종료")
+
+
+# ✅ FastAPI 앱 생성 
 app = FastAPI(
-    title="Finance Service API",
-    description="Finance Service API for jinmini.com",
-    version="0.1.0"
+    title="Finance API",
+    description="Finance API Service",
+    version="0.1.0",
 )
 
-# CORS 설정
+# ✅ CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,43 +42,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 경로 설정
-fin_router = APIRouter(prefix="/fin")
+# ✅ 서브 라우터 생성
+fin_router = APIRouter(prefix="/fin", tags=["Finance API"])
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("🚀 Finance Service 시작됩니다.")
-    yield
-    print("🛑 Finance Service 종료됩니다.")
+# ✅ 서브 라우터와 엔드포인트를 연결함
+app.include_router(fin_api_router, prefix="/fin", tags=["Finance API"])
 
-app.lifespan = lifespan
-
-# fin_api_router를 fin_router에 포함 (중요!)
-fin_router.include_router(fin_api_router)
-
-# 기존 특정 경로 핸들러들
-@fin_router.get("/status")
-async def status() -> Dict[str, Any]:
-    return {"status": "Finance Service is running"}
-
-@fin_router.get("/balance/{user_id}")
-async def get_balance(user_id: str) -> Dict[str, Any]:
-    return {"user_id": user_id, "balance": 10000}
-
-@fin_router.post("/transfer")
-async def transfer(request: Request) -> Dict[str, Any]:
-    data = await request.json()
-    return {
-        "status": "success",
-        "message": "Transfer processed",
-        "data": data
-    }
-
-# 라우터 등록
-app.include_router(fin_router)
-
-# 서버 실행
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True) 
+# ✅ 서브 라우터 등록
+app.include_router(fin_router, tags=["Finance API"])

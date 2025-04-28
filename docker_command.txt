@@ -23,7 +23,7 @@ docker exec -it lif_api_server-esgservice-1 bash      # esg 컨테이너 접속
 docker exec -it lif_api_server-stockservice-1 bash    # stock 컨테이너 접속
 
 # PostgreSQL 접속
-docker exec -it lif_api_server-postgres-1 psql -U postgres -d lifdb  # PostgreSQL DB 접속
+docker exec -it api-server-postgres-1 psql -U postgres -d lifdb # PostgreSQL DB 접속
 
 # PostgreSQL 명령어
 # \l                    # 데이터베이스 목록 보기

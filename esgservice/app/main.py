@@ -1,20 +1,43 @@
-from fastapi import FastAPI, APIRouter, Request
+import json
+from typing import Any, Dict, Optional
+from fastapi import APIRouter, FastAPI, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Dict, Any
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import os
-
-# esg_router.py에서 라우터 가져오기
+import logging
+import sys
+import time
+from dotenv import load_dotenv
 from app.api.esg_router import router as esg_api_router
 
-# FastAPI 앱 생성
+# ✅로깅 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("esg_api")
+
+# ✅.env 파일 로드
+load_dotenv()
+
+# ✅ 애플리케이션 시작 시 실행
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("🚀 ESG API 서비스 시작")
+    yield
+    logger.info("🛑 ESG API 서비스 종료")
+
+# ✅ FastAPI 앱 생성 
 app = FastAPI(
-    title="ESG Service API",
-    description="ESG Service API for jinmini.com",
-    version="0.1.0"
+    title="ESG API",
+    description="ESG API for jinmini.com",
+    version="0.1.0",
+    lifespan=lifespan
 )
 
-# CORS 설정
+# ✅ CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,30 +46,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 경로 설정
-esg_router = APIRouter(prefix="/esg")
+# ✅ 서브 라우터 생성
+esg_router = APIRouter(prefix="/esg", tags=["ESG API"])
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("🚀 ESG Service 시작됩니다.")
-    yield
-    print("🛑 ESG Service 종료됩니다.")
+# ✅ 서브 라우터와 엔드포인트를 연결
+app.include_router(esg_api_router, prefix="/esg")
 
-app.lifespan = lifespan
+# ✅ 서브라우터 등록
+app.include_router(esg_router, tags=["ESG"])
 
-# esg_api_router를 esg_router에 포함
-esg_router.include_router(esg_api_router)
-
-# 기본 상태 확인 엔드포인트
-@esg_router.get("/status")
-async def status() -> Dict[str, Any]:
-    return {"status": "ESG Service is running"}
-
-# 라우터 등록
-app.include_router(esg_router)
-
-# 서버 실행
+# ✅ 서버 실행
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8002))
+    port = int(os.getenv("PORT", 8081))
     uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
